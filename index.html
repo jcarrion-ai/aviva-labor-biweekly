@@ -25,35 +25,28 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: Arial, Helvetica, sans-serif; font-size: 13.5px; }
-
-  /* Brand bar */
-  .brandbar { background: var(--sidebar); color: #fff; padding: 16px 36px; display: flex; justify-content: space-between; align-items: center; }
-  .brandbar h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
-  .brandbar p { margin: 2px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.55); }
-  .brandbar .meta { font-size: 12.5px; color: rgba(255,255,255,0.7); text-align: right; }
-  .brandbar .meta strong { color: #fff; display: block; font-size: 13.5px; }
-
-  /* Tab bar */
-  .tabs-wrap { background: #fff; border-bottom: 1px solid var(--border); padding: 0 24px; overflow-x: auto; white-space: nowrap; position: sticky; top: 0; z-index: 10; }
-  .tabs { display: inline-flex; gap: 0; }
-  .tab {
-    padding: 14px 18px; font-size: 13.5px; color: var(--text2); cursor: pointer;
-    border-bottom: 3px solid transparent; user-select: none;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
-  .tab .tab-sub { font-size: 11px; color: var(--text2); margin-left: 6px; font-weight: 500; }
-  .tab.active .tab-sub { color: var(--primary); }
-
-  .content { padding: 28px 36px 48px; max-width: 1400px; margin: 0 auto; }
-
-  .topline { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; gap: 24px; }
-  .topline h2 { margin: 0; font-size: 22px; font-weight: 700; }
-  .topline h2 small { color: var(--text2); font-weight: 500; font-size: 14px; margin-left: 8px; }
-  .topline .period { font-size: 13px; color: var(--text2); text-align: right; }
-  .topline .period strong { color: var(--text); display: block; }
-
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 260px; background: var(--sidebar); color: #fff; flex-shrink: 0; display: flex; flex-direction: column; }
+  .sidebar-brand { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .sidebar-brand h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
+  .sidebar-brand p { margin: 4px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); }
+  .sidebar-nav { padding: 12px 0; flex: 1; }
+  .nav-section { padding: 18px 24px 6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.35); }
+  .nav-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 24px; color: rgba(255,255,255,0.78); border-left: 3px solid transparent; font-size: 13px; cursor: pointer; user-select: none; gap: 8px; }
+  .nav-item.active { background: rgba(29,158,117,0.12); border-left-color: var(--primary); color: #fff; font-weight: 600; }
+  .nav-item:hover:not(.active) { background: rgba(255,255,255,0.05); color: #fff; }
+  .nav-item .pill { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); font-weight: 500; flex-shrink: 0; }
+  .nav-item .pill.warn { background: rgba(230,160,40,0.22); color: #FFD580; }
+  .nav-item .pill.danger { background: rgba(192,57,43,0.25); color: #FFB3A8; }
+  .nav-item .pill.ok { background: rgba(29,158,117,0.22); color: #A8E5CD; }
+  .sidebar-foot { padding: 14px 24px; font-size: 11px; color: rgba(255,255,255,0.35); border-top: 1px solid rgba(255,255,255,0.08); }
+  .main { flex: 1; min-width: 0; }
+  .topbar { background: #fff; padding: 18px 36px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+  .topbar h2 { margin: 0; font-size: 20px; font-weight: 700; }
+  .topbar h2 small { color: var(--text2); font-weight: 500; font-size: 14px; margin-left: 8px; }
+  .topbar .meta { font-size: 13.5px; color: var(--text2); text-align: right; }
+  .topbar .meta strong { color: var(--text); display: block; }
+  .content { padding: 28px 36px 48px; }
   .section-header { font-size: 16px; font-weight: 700; margin: 28px 0 14px; }
   .section-header:first-child { margin-top: 0; }
 
@@ -95,141 +88,138 @@
   .pending { color: var(--text2); font-style: italic; }
   .note { color: var(--text2); font-size: 12.5px; padding: 12px 16px; background: rgba(26,46,74,0.04); border-left: 3px solid var(--text2); border-radius: 4px; margin-top: 10px; margin-bottom: 32px; }
 
-  .footer { padding: 22px 36px; color: var(--text2); font-size: 12px; text-align: center; }
+  .footer { padding: 22px 36px; color: var(--text2); font-size: 12px; }
 
   @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 768px) {
+    .sidebar { display: none; }
     .kpi-grid { grid-template-columns: 1fr; }
     .content { padding: 20px; }
-    .brandbar { flex-direction: column; align-items: flex-start; gap: 10px; }
-    .brandbar .meta { text-align: left; }
   }
 </style>
 </head>
 <body>
-  <div class="brandbar">
-    <div>
-      <h1>Aviva Senior Living — Bi-Weekly Labor Dashboard</h1>
-      <p>Per-community drill-down • Labor &amp; Overtime</p>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>Aviva Senior Living</h1>
+      <p>Labor &amp; Overtime</p>
     </div>
-    <div class="meta">
-      <strong>Pay Period: Apr 5 – Apr 18, 2026 • Pays Apr 24</strong>
-      <span id="refreshStamp">Last refresh —</span>
-    </div>
-  </div>
-
-  <div class="tabs-wrap">
-    <div class="tabs" id="tabs"></div>
-  </div>
-
-  <main class="content">
-    <div class="topline">
+    <nav class="sidebar-nav" id="sidebarNav">
+      <div class="nav-section">Communities</div>
+      <!-- nav items injected by JS -->
+    </nav>
+    <div class="sidebar-foot">v1.6 • Lloyd Jones LLC</div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
       <h2 id="propTitle">— <small id="propCodeBadge"></small></h2>
-      <div class="period">
+      <div class="meta">
         <strong id="periodLabel">Pay Period —</strong>
-        <span>Source: AOD • Budgets: Apr 2026 monthly × 14/30</span>
+        <span id="refreshStamp">Last refresh —</span>
       </div>
     </div>
+    <div class="content">
 
-    <div id="varianceCallout" class="callout" style="display:none;"></div>
+      <div id="varianceCallout" class="callout" style="display:none;"></div>
 
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">Active Hours (REG)</div>
-        <div class="kpi-value" id="kpiReg">—</div>
-        <div class="kpi-sub">Regular hours worked</div>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Active Hours (REG)</div>
+          <div class="kpi-value" id="kpiReg">—</div>
+          <div class="kpi-sub">Regular hours worked</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">OT Hours</div>
+          <div class="kpi-value" id="kpiOvt">—</div>
+          <div class="kpi-sub" id="kpiOvtSub">— of total</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">OT % of Total</div>
+          <div class="kpi-value" id="kpiPct">—</div>
+          <div class="kpi-sub">Target ≤ 3.0%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Bi-Wk Variance</div>
+          <div class="kpi-value" id="kpiVar">—</div>
+          <div class="kpi-sub" id="kpiVarSub">vs $— budget</div>
+        </div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">OT Hours</div>
-        <div class="kpi-value" id="kpiOvt">—</div>
-        <div class="kpi-sub" id="kpiOvtSub">— of total</div>
+
+      <div class="section-header">OT % by Department</div>
+      <div class="chart-card"><div class="chart-wrap" id="otChartWrap"><canvas id="otChart"></canvas></div></div>
+
+      <div class="section-header">Hours by Department (Regular + OT)</div>
+      <div class="chart-card"><div class="chart-wrap" id="hoursChartWrap"><canvas id="hoursChart"></canvas></div></div>
+
+      <div class="section-header">Department Detail (Hours)</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Department</th>
+              <th class="num">Reg Hours</th>
+              <th class="num">OT Hours</th>
+              <th class="num">OT %</th>
+              <th class="num">Total Hours</th>
+            </tr>
+          </thead>
+          <tbody id="deptBody"></tbody>
+          <tfoot>
+            <tr>
+              <td>Property Total</td>
+              <td class="num" id="ftReg">—</td>
+              <td class="num" id="ftOvt">—</td>
+              <td class="num" id="ftPct">—</td>
+              <td class="num" id="ftTotal">—</td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">OT % of Total</div>
-        <div class="kpi-value" id="kpiPct">—</div>
-        <div class="kpi-sub">Target ≤ 3.0%</div>
+
+      <div class="section-header">Budget vs Actual (Payroll $)</div>
+      <div id="budgetCallout" class="callout" style="display:none;"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Department / Position</th>
+              <th class="num">Bi-Wk $ Budget</th>
+              <th class="num">Actual Hrs</th>
+              <th class="num">$/Hr Rate</th>
+              <th class="num">Est. $ Actual</th>
+              <th class="num">Variance $</th>
+              <th class="num">Variance %</th>
+            </tr>
+          </thead>
+          <tbody id="budgetBody"></tbody>
+          <tfoot>
+            <tr>
+              <td>Property Total</td>
+              <td class="num" id="bfBiwk">—</td>
+              <td class="num" id="bfHours">—</td>
+              <td class="num" id="bfRate">—</td>
+              <td class="num" id="bfActual">—</td>
+              <td class="num" id="bfVarDollars">—</td>
+              <td class="num" id="bfVarPct">—</td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Bi-Wk Variance</div>
-        <div class="kpi-value" id="kpiVar">—</div>
-        <div class="kpi-sub" id="kpiVarSub">vs $— budget</div>
-      </div>
+
+      <div class="note">Bi-weekly $ budget = April 2026 monthly payroll budget × 14/30 (Apr 5–18 is 14 days within April). $/Hr Rate from each property's Detailed Payroll sheet (per-employee Hours × Wages aggregation per dept). Est. $ Actual = AOD hours × $/hr. <strong>Variance $</strong> = Est. Actual − Budget (positive = over budget). &gt; 10% over flagged red, 5–10% amber, under budget green. Wage rates are <em>base wages only</em> — they exclude employer-side payroll taxes (FICA/FUTA/SUTA/work comp), benefits, bonuses, and PTO accruals, which the budget likely includes; absolute variance therefore understates true labor cost. Relative ranking across departments and properties is the more reliable signal.</div>
+
     </div>
-
-    <div class="section-header">OT % by Department</div>
-    <div class="chart-card"><div class="chart-wrap" id="otChartWrap"><canvas id="otChart"></canvas></div></div>
-
-    <div class="section-header">Hours by Department (Regular + OT)</div>
-    <div class="chart-card"><div class="chart-wrap" id="hoursChartWrap"><canvas id="hoursChart"></canvas></div></div>
-
-    <div class="section-header">Department Detail (Hours)</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Department</th>
-            <th class="num">Reg Hours</th>
-            <th class="num">OT Hours</th>
-            <th class="num">OT %</th>
-            <th class="num">Total Hours</th>
-          </tr>
-        </thead>
-        <tbody id="deptBody"></tbody>
-        <tfoot>
-          <tr>
-            <td>Property Total</td>
-            <td class="num" id="ftReg">—</td>
-            <td class="num" id="ftOvt">—</td>
-            <td class="num" id="ftPct">—</td>
-            <td class="num" id="ftTotal">—</td>
-          </tr>
-        </tfoot>
-      </table>
+    <div class="footer">
+      Source: Attendance on Demand • Generated 2026-04-28 •
+      <a href="https://avivasl.attendanceondemand.com/mobile/mss3.aew/#{E7597EB0-DCAB-4D4C-892F-92110949DE80}" target="_blank" rel="noopener">Open AOD portal →</a>
     </div>
-
-    <div class="section-header">Budget vs Actual (Payroll $)</div>
-    <div id="budgetCallout" class="callout" style="display:none;"></div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Department / Position</th>
-            <th class="num">Bi-Wk $ Budget</th>
-            <th class="num">Actual Hrs</th>
-            <th class="num">$/Hr Rate</th>
-            <th class="num">Est. $ Actual</th>
-            <th class="num">Variance $</th>
-            <th class="num">Variance %</th>
-          </tr>
-        </thead>
-        <tbody id="budgetBody"></tbody>
-        <tfoot>
-          <tr>
-            <td>Property Total</td>
-            <td class="num" id="bfBiwk">—</td>
-            <td class="num" id="bfHours">—</td>
-            <td class="num" id="bfRate">—</td>
-            <td class="num" id="bfActual">—</td>
-            <td class="num" id="bfVarDollars">—</td>
-            <td class="num" id="bfVarPct">—</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-
-    <div class="note">Bi-weekly $ budget = April 2026 monthly payroll budget × 14/30 (Apr 5–18 is 14 days within April). $/Hr Rate from each property's Detailed Payroll sheet (per-employee Hours × Wages aggregation per dept). Est. $ Actual = AOD hours × $/hr. <strong>Variance $</strong> = Est. Actual − Budget (positive = over budget). &gt; 10% over flagged red, 5–10% amber, under budget green. Wage rates are <em>base wages only</em> — they exclude employer-side payroll taxes (FICA/FUTA/SUTA/work comp), benefits, bonuses, and PTO accruals, which the budget likely includes; absolute variance therefore understates true labor cost. Relative ranking across departments and properties is the more reliable signal.</div>
-
   </main>
-
-  <div class="footer">
-    Source: Attendance on Demand • Generated 2026-04-28 •
-    <a href="https://avivasl.attendanceondemand.com/mobile/mss3.aew/#{E7597EB0-DCAB-4D4C-892F-92110949DE80}" target="_blank" rel="noopener">Open AOD portal →</a>
-    • v1.5 • Lloyd Jones LLC
-  </div>
+</div>
 
 <script>
 // ====== HELPERS ======
-const TAB_ORDER = ['ABP','CCH','GLN','AGB','HIL','MAY','MER','PSL','RVB','VAL','AWH','WDL'];
+const COMMUNITY_ORDER = ['ABP','CCH','GLN','AGB','HIL','MAY','MER','PSL','RVB','VAL','AWH','WDL'];
 const fmtN = (n, d=0) => n == null ? '—' : Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
 const fmtPct = (n) => n == null ? '—' : Number(n).toFixed(2) + '%';
 const fmtUSD = (n) => (n == null) ? '—' : (n === 0 ? '$0' : '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 }));
@@ -250,38 +240,66 @@ const varClass = (pct) => {
   if (pct < 0) return 'var-under';
   return 'var-zero';
 };
+const pillClass = (pct) => {
+  if (pct == null) return '';
+  if (pct > 10) return 'danger';
+  if (pct > 5) return 'warn';
+  if (pct < -5) return 'ok';
+  return '';
+};
 
 let otChart = null, hoursChart = null;
 
-// ====== TAB BUILDER ======
-function buildTabs() {
-  const tabsEl = document.getElementById('tabs');
-  tabsEl.innerHTML = TAB_ORDER.map(code => {
-    const p = window.AVIVA_PROPERTIES[code] || { name: code, code };
-    const depts = window.AVIVA_DEPTS[code] || [];
-    const totReg = depts.reduce((s,d) => s + d.reg, 0);
-    const totOvt = depts.reduce((s,d) => s + d.ovt, 0);
-    const otPct = totReg+totOvt > 0 ? (totOvt/(totReg+totOvt)*100) : 0;
-    const sub = otPct.toFixed(1) + '%';
-    return `<div class="tab" data-code="${code}">${p.name}<span class="tab-sub">${sub}</span></div>`;
-  }).join('');
-  tabsEl.querySelectorAll('.tab').forEach(el => {
-    el.addEventListener('click', () => {
-      const code = el.dataset.code;
+// ====== Compute community summary (used by sidebar pills) ======
+function computeSummary(code) {
+  const depts = (window.AVIVA_DEPTS && window.AVIVA_DEPTS[code]) || [];
+  const budget = (window.AVIVA_BUDGETS && window.AVIVA_BUDGETS[code]) || [];
+  const factor = window.AVIVA_BIWEEKLY_FACTOR || (14/30);
+  const propRates = (window.AVIVA_WAGE_RATES && window.AVIVA_WAGE_RATES[code]) || {};
+  const fallback = window.AVIVA_FALLBACK_RATE || 25;
+  const totMonthly = budget.reduce((s,b) => s + b.monthly, 0);
+  const totBiwk = totMonthly * factor;
+  let estActual = 0;
+  depts.forEach(d => {
+    const m = (d.dept || '').match(/^(\d{5})/);
+    const gl5 = m ? m[1] : null;
+    const rate = (gl5 && propRates[gl5] != null) ? propRates[gl5] : fallback;
+    estActual += (d.reg + d.ovt) * rate;
+  });
+  const variance = estActual - totBiwk;
+  const variancePct = totBiwk > 0 ? (variance / totBiwk * 100) : null;
+  return { totBiwk, estActual, variance, variancePct };
+}
+
+// ====== Build sidebar ======
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  const sectionHeader = nav.querySelector('.nav-section');
+  // Clear existing nav items but keep section header
+  nav.innerHTML = '';
+  nav.appendChild(sectionHeader || (() => { const d = document.createElement('div'); d.className='nav-section'; d.textContent='Communities'; return d; })());
+  COMMUNITY_ORDER.forEach(code => {
+    const p = window.AVIVA_PROPERTIES[code] || { name: code };
+    const summary = computeSummary(code);
+    const pillTxt = summary.variancePct == null ? '—' : fmtVarPct(summary.variancePct);
+    const pCls = pillClass(summary.variancePct);
+    const item = document.createElement('div');
+    item.className = 'nav-item';
+    item.dataset.code = code;
+    item.innerHTML = `<span>${p.name}</span><span class="pill ${pCls}">${pillTxt}</span>`;
+    item.addEventListener('click', () => {
       activate(code);
       history.replaceState(null, '', '#' + code.toLowerCase());
     });
+    nav.appendChild(item);
   });
 }
 
 function activate(code) {
-  document.querySelectorAll('.tab').forEach(el => {
+  document.querySelectorAll('.nav-item').forEach(el => {
     el.classList.toggle('active', el.dataset.code === code);
   });
   render(code);
-  // Scroll active tab into view (mobile)
-  const activeEl = document.querySelector('.tab.active');
-  if (activeEl && activeEl.scrollIntoView) activeEl.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
 
 // ====== RENDER A COMMUNITY ======
@@ -309,7 +327,7 @@ function render(code) {
   document.getElementById('kpiOvtSub').textContent = `${otPct.toFixed(1)}% of total`;
   document.getElementById('kpiPct').innerHTML = `${otPct.toFixed(1)}<span style="font-size:18px;">%</span>`;
 
-  // ---- Variance computation ----
+  // ---- Variance ----
   const aodByGl5 = {};
   depts.forEach(d => {
     const m = (d.dept || '').match(/^(\d{5})/);
@@ -352,7 +370,6 @@ function render(code) {
   const totVarPct = totBiwk > 0 ? (totVar / totBiwk * 100) : null;
   const totRate = (totH > 0) ? (totActual / totH) : null;
 
-  // ---- Variance KPI ----
   document.getElementById('kpiVar').innerHTML = `<span class="${varClass(totVarPct)}">${fmtUSDsign(totVar)}</span>`;
   document.getElementById('kpiVarSub').textContent = `${fmtVarPct(totVarPct)} vs ${fmtUSD(totBiwk)} budget`;
 
@@ -498,10 +515,9 @@ function render(code) {
 
 // ====== INIT ======
 function init() {
-  buildTabs();
-  // Pick tab from URL hash, otherwise default to first community
+  buildSidebar();
   const hash = (location.hash || '').replace('#','').toUpperCase();
-  const initial = TAB_ORDER.includes(hash) ? hash : TAB_ORDER[0];
+  const initial = COMMUNITY_ORDER.includes(hash) ? hash : COMMUNITY_ORDER[0];
   activate(initial);
 }
 init();
