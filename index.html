@@ -111,12 +111,25 @@
       <p>Labor &amp; Overtime</p>
     </div>
     <nav class="sidebar-nav">
-      <a class="nav-item active">Bi-Weekly Hours</a>
-      <a class="nav-item">Submission Status</a>
-      <a class="nav-item">Property Detail</a>
-      <a class="nav-item">Budget Variance (Phase 2)</a>
+      <a class="nav-item active">Portfolio Overview</a>
+      <a class="nav-item" href="#submission">Submission Status</a>
+      <a class="nav-item" href="#detail">Property Detail</a>
+      <a class="nav-item" href="#phase2">Budget Variance (Phase 2)</a>
+      <div style="padding: 18px 24px 6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.35);">Drill-Down</div>
+      <a class="nav-item" href="property/abp.html">Baldwin Park</a>
+      <a class="nav-item" href="property/cch.html">Country Club Heights</a>
+      <a class="nav-item" href="property/gln.html">Glendale</a>
+      <a class="nav-item" href="property/agb.html">Granbury</a>
+      <a class="nav-item" href="property/hil.html">Hills</a>
+      <a class="nav-item" href="property/may.html">Maybelle Carter</a>
+      <a class="nav-item" href="property/mer.html">Merrillville</a>
+      <a class="nav-item" href="property/psl.html">Port St. Lucie</a>
+      <a class="nav-item" href="property/rvb.html">Riverbend</a>
+      <a class="nav-item" href="property/val.html">Valparaiso</a>
+      <a class="nav-item" href="property/awh.html">West Hartford</a>
+      <a class="nav-item" href="property/wdl.html">Woodlands</a>
     </nav>
-    <div class="sidebar-foot">v1.1 • Lloyd Jones LLC</div>
+    <div class="sidebar-foot">v1.2 • Lloyd Jones LLC</div>
   </aside>
   <main class="main">
     <div class="topbar">
@@ -292,7 +305,8 @@ const statusColor = (s) => ({submitted:'#1D9E75', partial:'#E6A028', not_submitt
 function renderStatusPills() {
   const el = document.getElementById('statusPills');
   el.innerHTML = PROPERTIES.map(p => {
-    return `<span class="badge" style="background:${statusColor(p.status)}1a;color:${statusColor(p.status)}">${statusIcon(p.status)} ${p.name}</span>`;
+    const drillUrl = `property/${p.code.toLowerCase()}.html`;
+    return `<a href="${drillUrl}" class="badge" style="background:${statusColor(p.status)}1a;color:${statusColor(p.status)};text-decoration:none;">${statusIcon(p.status)} ${p.name}</a>`;
   }).join('');
   const counts = { submitted:0, partial:0, not_submitted:0, unknown:0 };
   PROPERTIES.forEach(p => counts[p.status]++);
@@ -319,10 +333,11 @@ function renderTable() {
     const otPct = (p.active != null && p.ot != null && p.active+p.ot > 0)
       ? (p.ot / (p.active + p.ot)) * 100 : null;
     const avg = (p.active != null && p.employees) ? (p.active + (p.ot||0)) / p.employees : null;
+    const drillUrl = `property/${p.code.toLowerCase()}.html`;
     return `
       <tr>
         <td>${statusBadge(p.status)}</td>
-        <td>${p.name}</td>
+        <td><a href="${drillUrl}" style="color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text2);">${p.name}</a></td>
         <td class="num">${fmtN(p.active, 1)}</td>
         <td class="num">${fmtN(p.ot, 1)}</td>
         <td class="num"><span class="${otClass(otPct)}">${fmtPct(otPct)}</span></td>
