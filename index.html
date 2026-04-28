@@ -222,7 +222,7 @@
         </table>
       </div>
 
-      <div class="section-header">Timesheet Exceptions <span class="exc-tag">v0 enterprise</span></div>
+      <div class="section-header">Timesheet Exceptions</div>
       <div class="exc-meta" id="excMeta">—</div>
       <div class="exc-grid">
         <div class="exc-card warn">
@@ -230,33 +230,34 @@
           <div class="val" id="excCreep">—</div>
           <div class="sub" id="excCreepSub">—</div>
         </div>
-        <div class="exc-card danger">
-          <div class="label">Missed Punches</div>
-          <div class="val" id="excMP">—</div>
-          <div class="sub" id="excMPSub">—</div>
+        <div class="exc-card warn">
+          <div class="label">Tardy + Absent</div>
+          <div class="val" id="excTdyAbs">—</div>
+          <div class="sub" id="excTdyAbsSub">—</div>
+        </div>
+        <div class="exc-card">
+          <div class="label">Unscheduled Punches</div>
+          <div class="val" id="excUns">—</div>
+          <div class="sub" id="excUnsSub">—</div>
         </div>
         <div class="exc-card tbd">
           <div class="label">Long Shift / Missed Meal</div>
           <div class="val">Coming next iteration</div>
           <div class="sub">≥ 8 hr w/ no meal punch — needs Time Card Detail extract</div>
         </div>
-        <div class="exc-card warn">
-          <div class="label">Est. Avoidable OT $</div>
-          <div class="val" id="excDollars">—</div>
-          <div class="sub" id="excDollarsSub">directional</div>
-        </div>
       </div>
       <div class="callout warn" id="excCallout">—</div>
-      <div class="section-header">Top Offenders by Creep <span class="exc-tag tbd">enterprise — not yet attributed by property</span></div>
+      <div class="section-header">Top Creep Offenders (this property) <span class="exc-tag">employee ID only</span></div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>Employee ID</th>
-              <th class="num">Early-In (ELY)</th>
-              <th class="num">Late-Out (LTE)</th>
-              <th class="num">Tardy (TDY)</th>
-              <th class="num">Missed Punches</th>
+              <th class="num">Early-In</th>
+              <th class="num">Late-Out</th>
+              <th class="num">Tardy</th>
+              <th class="num">Unsched.</th>
+              <th class="num">Absent</th>
               <th class="num">Creep Total</th>
             </tr>
           </thead>
@@ -264,10 +265,10 @@
         </table>
       </div>
       <div class="note">
-        <strong>v0 scope (this iteration):</strong> Enterprise-level counts pulled from AOD's Daily Operations → Employee Exceptions report for the period Apr 5–18. AOD flags an exception when a punch differs from the employee's schedule by the operator-configured threshold; we are interpreting <strong>ELY (early-in)</strong> + <strong>LTE (late-out)</strong> as "creep". <em>Confirm with your AOD admin that the threshold matches our 7-minute rule.</em><br><br>
-        <strong>Coming on May 8:</strong> Per-property attribution (run the Employee Exceptions report 12× with workgroup filters, OR cross-reference 612 affected employees against the Employee Details report's Home Workgroup column) and a per-community top-offender list.<br><br>
-        <strong>Coming next iteration:</strong> Long-shift (≥ 8 hr, no meal break) and missed-meal categories. These require punch-detail extraction (Time Card Detail by employee) which AOD does not surface in any aggregated report; needs a separate extraction loop.<br><br>
-        <strong>$ estimate method:</strong> 1,178 creep events × 10 min avg overage × 50% landing in OT premium territory × $32/hr blended OT rate ≈ $3.1k for this 14-day period. Directional only — refine once per-event minute magnitudes are available from punch detail.
+        <strong>Source:</strong> AOD Daily Operations → Employee Exceptions report (612 enterprise employees with at least one exception), joined to Employee Details for property attribution. ELY = early-in, LTE = late-out, TDY = tardy, UNS = unscheduled punch, ABS = absent. <em>"Creep" = ELY + LTE.</em> AOD's exception threshold is operator-configured — confirm with your AOD admin that it matches the agreed 7-minute rule, otherwise our counts under- or over-state creep.<br><br>
+        <strong>Why some properties show zero creep:</strong> AOD can only flag "early/late vs schedule" for employees who have schedules loaded. PSL and RVB employees do not have schedule patterns in AOD, so their punches all fall into the UNS (unscheduled) bucket and creep is undetectable. Loading schedule patterns is the prerequisite for exception monitoring at those two properties.<br><br>
+        <strong>Coming next iteration:</strong> Long-shift (≥ 8 hr, no meal break) and missed-meal categories require punch-detail extraction (Time Card Detail per employee), not surfaced in any aggregated AOD report. Separate extraction loop needed.<br><br>
+        <strong>Audit note (2026-04-28):</strong> The prior dashboard version showed a "Missed Punches: 3,905" tile — that figure was a column-mapping bug (the AOD "Totals" column was misread as MP). MP is not exposed in the Previous-Period view of this report; the tile has been replaced with Tardy+Absent and Unscheduled Punches.
       </div>
 
       <div class="note"><strong>Scope:</strong> Pay period Sun Apr 5 – Sat Apr 18, 2026 (14 days, paid Fri Apr 24, 1-week arrears). Hours and OT come straight from AOD (Reporting → Department Hours, grouped by Location Code + Department Name). Budget $ is the April 2026 monthly payroll budget from each property's Payroll sheet × 14/30 to align with the 14-day pay period. <br><br><strong>$ variance method:</strong> Loaded $/hr rate (Detailed Payroll cols G–O ÷ hours, ~1.165× base wages) × AOD hours = estimated $ actual. <strong>Health insurance, 401k, and PTO accruals are intentionally excluded</strong> — only payroll wages, OT, ER taxes, and admin fees are in scope. <br><br><strong>"Matched" vs "Unstaffed":</strong> KPI tile and footer show variance only for departments with both a budget AND AOD activity. Budget lines for vacant/non-existent positions (CRD, Chef, Memory Care Mgr at some properties, etc.) are surfaced separately as <em>unstaffed budget</em> in the callout. &gt; 10% over flagged red, 5–10% amber, under budget green.</div>
@@ -619,43 +620,78 @@ function render(code) {
   else co.className = 'callout info';
   co.innerHTML = bits.join('<br>');
 
-  // ---- Exceptions section (enterprise-level for v0) ----
-  renderExceptions();
+  // ---- Exceptions section (per-community) ----
+  renderExceptions(code);
 }
 
-function renderExceptions() {
-  const t = window.AVIVA_EXCEPTIONS_TOTALS;
+function renderExceptions(code) {
   const p = window.AVIVA_EXCEPTIONS_PERIOD;
-  const top = window.AVIVA_EXCEPTIONS_TOP_CREEP || [];
-  const dollars = window.AVIVA_EXCEPTIONS_DOLLARS_EST;
-  if (!t || !p) return;
-  document.getElementById('excMeta').innerHTML =
-    `Period: ${p.start} – ${p.end} (${p.days} days) • <strong>${t.employees_total}</strong> employees with at least one exception • Enterprise scope (per-property breakdown coming May 8).`;
-  document.getElementById('excCreep').textContent = fmtN(t.creep, 0);
+  const byProp = window.AVIVA_EXCEPTIONS_BY_PROPERTY || {};
+  const ent = window.AVIVA_EXCEPTIONS_ENTERPRISE || {};
+  const e = byProp[code];
+  if (!p || !e) return;
+  // Rank this property's creep vs siblings (1 = worst)
+  const ranking = Object.keys(byProp)
+    .map(c => ({ c, creep: byProp[c].creep, scheduleDataIssue: byProp[c].scheduleDataIssue }))
+    .filter(r => !r.scheduleDataIssue)  // exclude PSL/RVB from ranking — apples to oranges
+    .sort((a,b) => b.creep - a.creep);
+  const rankIdx = ranking.findIndex(r => r.c === code);
+  const rankSuffix = (n) => {
+    if (n == null) return '';
+    const j = n % 10, k = n % 100;
+    if (j === 1 && k !== 11) return n + 'st';
+    if (j === 2 && k !== 12) return n + 'nd';
+    if (j === 3 && k !== 13) return n + 'rd';
+    return n + 'th';
+  };
+  // Meta line
+  const propName = (window.AVIVA_PROPERTIES[code] || {}).name || code;
+  let metaText = `Period: ${p.start} – ${p.end} (${p.days} days) • <strong>${e.empWithExc}</strong> of ${e.totalEmployees} employees had at least one exception`;
+  if (!e.scheduleDataIssue && rankIdx >= 0) {
+    metaText += ` • Creep rank: <strong>${rankSuffix(rankIdx + 1)} of ${ranking.length}</strong> ranked properties`;
+  }
+  document.getElementById('excMeta').innerHTML = metaText;
+  // KPI tiles
+  document.getElementById('excCreep').textContent = fmtN(e.creep, 0);
   document.getElementById('excCreepSub').innerHTML =
-    `${t.ely} early-in + ${t.lte} late-out across <strong>${t.employees_with_creep}</strong> employees`;
-  document.getElementById('excMP').textContent = fmtN(t.mp, 0);
-  document.getElementById('excMPSub').innerHTML =
-    `Across all ${t.employees_with_mp} employees — data quality / approval flag`;
-  document.getElementById('excDollars').textContent = fmtUSD(dollars ? dollars.estimate : null);
-  document.getElementById('excDollarsSub').textContent = dollars ? dollars.method : 'directional';
+    `${e.ely} early-in + ${e.lte} late-out across <strong>${e.empWithCreep}</strong> employees`;
+  document.getElementById('excTdyAbs').textContent = fmtN(e.tdy + e.abs, 0);
+  document.getElementById('excTdyAbsSub').innerHTML =
+    `${e.tdy} tardy + ${e.abs} absent`;
+  document.getElementById('excUns').textContent = fmtN(e.uns, 0);
+  document.getElementById('excUnsSub').innerHTML =
+    `Punches outside any schedule${e.scheduleDataIssue ? ' — <strong style="color:var(--danger)">no schedules loaded</strong>' : ''}`;
   // Callout
   const co = document.getElementById('excCallout');
-  co.innerHTML =
-    `<strong>1,178 creep events in 14 days across 251 employees</strong> — ` +
-    `the top 25 offenders alone account for ${top.reduce((s,r) => s + r.ely + r.lte, 0)} of those (${(top.reduce((s,r) => s + r.ely + r.lte, 0) / t.creep * 100).toFixed(0)}%). ` +
-    `Pulling that tail back is where the avoidable OT lives. ` +
-    `Per-property attribution lands May 8 once the workgroup-filter pipeline is wired.`;
-  // Top offenders table
+  if (e.scheduleDataIssue) {
+    co.className = 'callout';
+    co.innerHTML =
+      `<strong>${propName} has no schedule data in AOD.</strong> ` +
+      `${e.uns} unscheduled punches across ${e.empWithExc} employees, but creep / tardy / absent counts are all zero — not because timing is clean, but because AOD has no schedule to compare punches against. ` +
+      `<em>Action:</em> load schedule patterns for ${propName} employees in AOD before exception monitoring is meaningful for this property.`;
+  } else if (e.creep === 0) {
+    co.className = 'callout ok';
+    co.innerHTML = `<strong>${propName}</strong> — no creep events in this period. ${e.uns > 0 ? `${e.uns} unscheduled punches; check whether all employees have current schedules.` : ''}`;
+  } else {
+    const empCreepPct = e.totalEmployees > 0 ? (e.empWithCreep / e.totalEmployees * 100).toFixed(0) : '?';
+    const top5Creep = e.top.filter(t => t.ely + t.lte > 0).slice(0, 5).reduce((s,t) => s + t.ely + t.lte, 0);
+    const top5Pct = e.creep > 0 ? (top5Creep / e.creep * 100).toFixed(0) : 0;
+    co.className = (e.empWithCreep / e.totalEmployees) > 0.4 ? 'callout' : 'callout warn';
+    co.innerHTML =
+      `<strong>${e.creep} creep events across ${e.empWithCreep} of ${e.totalEmployees} employees (${empCreepPct}%)</strong> in 14 days. ` +
+      `Top 5 offenders account for ${top5Creep} events (${top5Pct}% of property creep) — that's where the avoidable-OT prize lives.`;
+  }
+  // Top offenders table — per property
   const body = document.getElementById('excTopBody');
-  body.innerHTML = top.slice(0, 25).map(r => {
+  body.innerHTML = e.top.map(r => {
     const creep = r.ely + r.lte;
     return `<tr>
       <td><strong>#${r.id}</strong></td>
       <td class="num">${r.ely}</td>
       <td class="num">${r.lte}</td>
       <td class="num">${r.tdy}</td>
-      <td class="num">${r.mp}</td>
+      <td class="num">${r.uns}</td>
+      <td class="num">${r.abs}</td>
       <td class="num"><strong>${creep}</strong></td>
     </tr>`;
   }).join('');
