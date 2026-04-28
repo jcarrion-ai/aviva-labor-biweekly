@@ -6,6 +6,7 @@
 <title id="pageTitle">Aviva Labor — Property Drill-Down</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="./data.js"></script>
+<script src="./budgets.js"></script>
 <style>
   :root {
     --bg: #F2F3F5;
@@ -69,6 +70,12 @@
   .pending { color: var(--text2); font-style: italic; }
   .callout { padding: 12px 16px; border-radius: 6px; font-size: 13px; margin-bottom: 18px; background: rgba(192,57,43,0.08); color: var(--danger); border: 1px solid rgba(192,57,43,0.25); }
   .callout.ok { background: rgba(29,158,117,0.10); color: var(--primary); border-color: rgba(29,158,117,0.25); }
+  .callout.warn { background: rgba(230,160,40,0.10); color: var(--warn-deep); border-color: rgba(230,160,40,0.25); }
+  .callout.info { background: rgba(26,46,74,0.05); color: var(--text); border-color: var(--border); }
+  .phase2-note { color: var(--text2); font-size: 12.5px; padding: 12px 16px; background: rgba(26,46,74,0.04); border-left: 3px solid var(--text2); border-radius: 4px; margin-top: 10px; }
+  .coverage-ok { color: var(--primary); font-weight: 600; font-size: 11.5px; }
+  .coverage-no { color: var(--danger); font-weight: 600; font-size: 11.5px; }
+  .coverage-zero { color: var(--text2); font-style: italic; font-size: 11.5px; }
   @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 768px) { .sidebar { display: none; } .kpi-grid { grid-template-columns: 1fr; } .content { padding: 20px; } }
 </style>
@@ -96,7 +103,7 @@
       <a class="nav-item" href="awh.html" data-code="AWH">West Hartford</a>
       <a class="nav-item" href="wdl.html" data-code="WDL">Woodlands</a>
     </nav>
-    <div class="sidebar-foot">v1.2 • Lloyd Jones LLC</div>
+    <div class="sidebar-foot">v1.3 • Lloyd Jones LLC</div>
   </aside>
   <main class="main">
     <div class="topbar">
@@ -167,6 +174,35 @@
           </tfoot>
         </table>
       </div>
+
+      <div class="section-header">Budget vs Actual (Payroll $)</div>
+      <div id="budgetCallout" class="callout" style="display:none;"></div>
+      <div class="table-wrap">
+        <table id="budgetTable">
+          <thead>
+            <tr>
+              <th>Department / Position</th>
+              <th class="num">Bi-Wk $ Budget</th>
+              <th class="num">Monthly $ Budget</th>
+              <th class="num">Actual Hours</th>
+              <th class="num">Implied $/Hr</th>
+              <th>Coverage</th>
+            </tr>
+          </thead>
+          <tbody id="budgetBody"></tbody>
+          <tfoot>
+            <tr>
+              <td>Property Total</td>
+              <td class="num" id="bfBiwk">—</td>
+              <td class="num" id="bfMonthly">—</td>
+              <td class="num" id="bfHours">—</td>
+              <td class="num" id="bfRate">—</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="phase2-note" id="budgetMethodNote" style="margin-bottom:32px;">Bi-weekly $ budget = Monthly April 2026 budget × 14/30 (Apr 5–18 is 14 days inside the 30-day April). Implied $/hr = Bi-weekly $ budget ÷ Total actual hours from AOD — useful as a sanity check on wage rate, not a true variance metric (AOD reports hours, not dollars).</div>
 
     </div>
     <div class="footer">
@@ -318,6 +354,89 @@ function init() {
   document.getElementById('ftOvt').textContent = fmtN(totOvt, 1);
   document.getElementById('ftPct').textContent = fmtPct(otPct);
   document.getElementById('ftTotal').textContent = fmtN(totalHours, 1);
+
+  // ====== BUDGET vs ACTUAL ======
+  const fmtUSD = (n) => n == null || n === 0 ? '—' : '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+  const budget = (window.AVIVA_BUDGETS && window.AVIVA_BUDGETS[code]) || [];
+  const factor = window.AVIVA_BIWEEKLY_FACTOR || (14/30);
+  // Build a map of dept GL5 -> AOD totals
+  const aodByGl5 = {};
+  depts.forEach(d => {
+    const m = (d.dept || '').match(/^(\d{5})/);
+    if (m) {
+      const gl = m[1];
+      if (!aodByGl5[gl]) aodByGl5[gl] = { reg: 0, ovt: 0, deptName: d.dept };
+      aodByGl5[gl].reg += d.reg;
+      aodByGl5[gl].ovt += d.ovt;
+    }
+  });
+  // Build merged rows: union of budget GL5s and AOD GL5s
+  const budgetByGl5 = {};
+  budget.forEach(b => budgetByGl5[b.gl5] = b);
+  const allGl5 = new Set([...Object.keys(budgetByGl5), ...Object.keys(aodByGl5)]);
+  const merged = [];
+  allGl5.forEach(gl => {
+    const b = budgetByGl5[gl];
+    const a = aodByGl5[gl];
+    const monthly = b ? b.monthly : 0;
+    const biweekly = monthly * factor;
+    const hours = a ? (a.reg + a.ovt) : 0;
+    const rate = (biweekly > 0 && hours > 0) ? (biweekly / hours) : null;
+    let coverage;
+    if (b && a) coverage = '<span class="coverage-ok">Budget + Actual</span>';
+    else if (b && !a) coverage = '<span class="coverage-zero">Budgeted, no AOD activity</span>';
+    else coverage = '<span class="coverage-no">Unbudgeted Activity</span>';
+    merged.push({
+      gl5: gl,
+      label: (b && b.position) ? `${gl}-${b.position}` : (a ? a.deptName : gl),
+      monthly, biweekly, hours, rate, coverage,
+      hasBudget: !!b, hasActual: !!a
+    });
+  });
+  // Sort: highest monthly $ budget first, then highest hours
+  merged.sort((x,y) => (y.monthly - x.monthly) || (y.hours - x.hours));
+  document.getElementById('budgetBody').innerHTML = merged.map(m => `
+    <tr>
+      <td>${m.label}</td>
+      <td class="num">${fmtUSD(m.biweekly)}</td>
+      <td class="num">${fmtUSD(m.monthly)}</td>
+      <td class="num">${m.hours > 0 ? fmtN(m.hours, 1) : '—'}</td>
+      <td class="num">${m.rate ? '$' + m.rate.toFixed(2) : '—'}</td>
+      <td>${m.coverage}</td>
+    </tr>
+  `).join('');
+  const totMonthly = merged.reduce((s,m) => s + m.monthly, 0);
+  const totBiwk = totMonthly * factor;
+  const totH = merged.reduce((s,m) => s + m.hours, 0);
+  const totRate = (totBiwk > 0 && totH > 0) ? (totBiwk / totH) : null;
+  document.getElementById('bfBiwk').textContent = fmtUSD(totBiwk);
+  document.getElementById('bfMonthly').textContent = fmtUSD(totMonthly);
+  document.getElementById('bfHours').textContent = fmtN(totH, 1);
+  document.getElementById('bfRate').textContent = totRate ? '$' + totRate.toFixed(2) : '—';
+
+  // Budget callout
+  const unbudgeted = merged.filter(m => m.hasActual && !m.hasBudget && m.hours > 0);
+  const idle = merged.filter(m => m.hasBudget && !m.hasActual && m.monthly > 0);
+  const co = document.getElementById('budgetCallout');
+  if (unbudgeted.length === 0 && idle.length === 0) {
+    co.style.display = 'block';
+    co.className = 'callout ok';
+    co.innerHTML = `Budget and AOD activity match across all ${merged.length} departments. Total bi-weekly payroll budget: <strong>${fmtUSD(totBiwk)}</strong>.`;
+  } else {
+    co.style.display = 'block';
+    const bits = [];
+    if (unbudgeted.length > 0) {
+      const names = unbudgeted.map(u => u.label).join(', ');
+      bits.push(`<strong>${unbudgeted.length} department(s) had AOD activity but no budget</strong>: ${names}.`);
+    }
+    if (idle.length > 0) {
+      const names = idle.slice(0,5).map(u => u.label.replace(/^\d{5}-/, '')).join(', ');
+      const more = idle.length > 5 ? ` (+${idle.length - 5} more)` : '';
+      bits.push(`${idle.length} budgeted department(s) had no AOD activity this period: ${names}${more}.`);
+    }
+    co.className = unbudgeted.length > 0 ? 'callout warn' : 'callout info';
+    co.innerHTML = bits.join('<br>');
+  }
 }
 init();
 </script>
