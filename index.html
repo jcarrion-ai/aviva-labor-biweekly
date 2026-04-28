@@ -109,7 +109,7 @@
       <div class="nav-section">Communities</div>
       <!-- nav items injected by JS -->
     </nav>
-    <div class="sidebar-foot">v1.6 • Lloyd Jones LLC</div>
+    <div class="sidebar-foot">v1.7 • Lloyd Jones LLC</div>
   </aside>
   <main class="main">
     <div class="topbar">
@@ -207,7 +207,7 @@
         </table>
       </div>
 
-      <div class="note">Bi-weekly $ budget = April 2026 monthly payroll budget × 14/30 (Apr 5–18 is 14 days within April). $/Hr Rate from each property's Detailed Payroll sheet (per-employee Hours × Wages aggregation per dept). Est. $ Actual = AOD hours × $/hr. <strong>Variance $</strong> = Est. Actual − Budget (positive = over budget). &gt; 10% over flagged red, 5–10% amber, under budget green. Wage rates are <em>base wages only</em> — they exclude employer-side payroll taxes (FICA/FUTA/SUTA/work comp), benefits, bonuses, and PTO accruals, which the budget likely includes; absolute variance therefore understates true labor cost. Relative ranking across departments and properties is the more reliable signal.</div>
+      <div class="note"><strong>How variance is calculated:</strong> Bi-weekly $ budget = April 2026 monthly payroll budget × 14/30. $/Hr rate is now <em>loaded</em> — it sums Detailed Payroll cols G–O (wages + bonus + phone + FICA + FUTA + SUTA + state tax + work comp + admin fee) ÷ hours, averaging ~16% above base wages. Still excludes health benefits/401k/PTO accruals (those are budgeted on the ER Premiums sheet — not yet pulled in). <br><br><strong>The KPI tile and table footer show "matched" variance only</strong> — i.e. departments that have BOTH a budget AND AOD hours this period. Budget lines for departments with zero AOD activity (typically vacant director positions, bonus/commission accruals, recruitment specialists at properties that don't have one) are surfaced separately as <em>"unstaffed budget"</em> in the callout above so they don't mask real overages. &gt; 10% over flagged red, 5–10% amber, under budget green.</div>
 
     </div>
     <div class="footer">
@@ -251,14 +251,35 @@ const pillClass = (pct) => {
 let otChart = null, hoursChart = null;
 
 // ====== Compute community summary (used by sidebar pills) ======
+// Returns BOTH "all budget" and "matched only" variance:
+// - all: every budgeted dept (including ones with zero AOD activity = unstaffed)
+// - matched: only depts that have BOTH a budget AND AOD activity (apples-to-apples)
 function computeSummary(code) {
   const depts = (window.AVIVA_DEPTS && window.AVIVA_DEPTS[code]) || [];
   const budget = (window.AVIVA_BUDGETS && window.AVIVA_BUDGETS[code]) || [];
   const factor = window.AVIVA_BIWEEKLY_FACTOR || (14/30);
   const propRates = (window.AVIVA_WAGE_RATES && window.AVIVA_WAGE_RATES[code]) || {};
   const fallback = window.AVIVA_FALLBACK_RATE || 25;
+  // Build AOD GL5 set
+  const aodGl5 = new Set();
+  const hoursByGl5 = {};
+  depts.forEach(d => {
+    const m = (d.dept || '').match(/^(\d{5})/);
+    if (m) {
+      const gl = m[1];
+      aodGl5.add(gl);
+      hoursByGl5[gl] = (hoursByGl5[gl] || 0) + d.reg + d.ovt;
+    }
+  });
+  // All budget
   const totMonthly = budget.reduce((s,b) => s + b.monthly, 0);
   const totBiwk = totMonthly * factor;
+  // Matched-only budget (depts with AOD activity)
+  const matchedMonthly = budget.filter(b => aodGl5.has(b.gl5)).reduce((s,b) => s + b.monthly, 0);
+  const matchedBiwk = matchedMonthly * factor;
+  // Unstaffed budget = total - matched
+  const unstaffedBiwk = totBiwk - matchedBiwk;
+  // Estimated $ actual from AOD hours × rate
   let estActual = 0;
   depts.forEach(d => {
     const m = (d.dept || '').match(/^(\d{5})/);
@@ -266,9 +287,16 @@ function computeSummary(code) {
     const rate = (gl5 && propRates[gl5] != null) ? propRates[gl5] : fallback;
     estActual += (d.reg + d.ovt) * rate;
   });
-  const variance = estActual - totBiwk;
-  const variancePct = totBiwk > 0 ? (variance / totBiwk * 100) : null;
-  return { totBiwk, estActual, variance, variancePct };
+  const allVar = estActual - totBiwk;
+  const allVarPct = totBiwk > 0 ? (allVar / totBiwk * 100) : null;
+  const matchedVar = estActual - matchedBiwk;
+  const matchedVarPct = matchedBiwk > 0 ? (matchedVar / matchedBiwk * 100) : null;
+  return {
+    totBiwk, matchedBiwk, unstaffedBiwk, estActual,
+    allVar, allVarPct, matchedVar, matchedVarPct,
+    // Sidebar pill uses matched (more meaningful at-a-glance signal)
+    variance: matchedVar, variancePct: matchedVarPct
+  };
 }
 
 // ====== Build sidebar ======
@@ -366,12 +394,23 @@ function render(code) {
   const totBiwk = totMonthly * factor;
   const totH = merged.reduce((s,m) => s + m.hours, 0);
   const totActual = merged.reduce((s,m) => s + m.estActual, 0);
+  // Split: matched = depts with both budget + AOD; unstaffed = budgeted but no AOD; unbudgeted = AOD activity but no budget
+  const matchedRows = merged.filter(m => m.hasBudget && m.hasActual);
+  const unstaffedRows = merged.filter(m => m.hasBudget && !m.hasActual);
+  const unbudgetedRows = merged.filter(m => !m.hasBudget && m.hasActual);
+  const matchedBiwk = matchedRows.reduce((s,m) => s + m.biweekly, 0);
+  const matchedActual = matchedRows.reduce((s,m) => s + m.estActual, 0);
+  const matchedVar = matchedActual - matchedBiwk;
+  const matchedVarPct = matchedBiwk > 0 ? (matchedVar / matchedBiwk * 100) : null;
+  const unstaffedBiwk = unstaffedRows.reduce((s,m) => s + m.biweekly, 0);
+  const unbudgetedActual = unbudgetedRows.reduce((s,m) => s + m.estActual, 0);
   const totVar = totActual - totBiwk;
   const totVarPct = totBiwk > 0 ? (totVar / totBiwk * 100) : null;
   const totRate = (totH > 0) ? (totActual / totH) : null;
 
-  document.getElementById('kpiVar').innerHTML = `<span class="${varClass(totVarPct)}">${fmtUSDsign(totVar)}</span>`;
-  document.getElementById('kpiVarSub').textContent = `${fmtVarPct(totVarPct)} vs ${fmtUSD(totBiwk)} budget`;
+  // KPI shows MATCHED variance (apples-to-apples on staffed depts)
+  document.getElementById('kpiVar').innerHTML = `<span class="${varClass(matchedVarPct)}">${fmtUSDsign(matchedVar)}</span>`;
+  document.getElementById('kpiVarSub').innerHTML = `${fmtVarPct(matchedVarPct)} matched • ${fmtUSD(unstaffedBiwk)} unstaffed budget`;
 
   // ---- OT % chart ----
   const otRows = depts.map(d => {
@@ -471,44 +510,49 @@ function render(code) {
       <td class="num"><span class="${varClass(m.variancePct)}">${varPctDisp}</span></td>
     </tr>`;
   }).join('');
-  document.getElementById('bfBiwk').textContent = fmtUSD(totBiwk);
+  // Footer shows MATCHED totals (apples-to-apples)
+  document.getElementById('bfBiwk').textContent = fmtUSD(matchedBiwk);
   document.getElementById('bfHours').textContent = fmtN(totH, 1);
   document.getElementById('bfRate').textContent = totRate ? '$' + totRate.toFixed(2) : '—';
-  document.getElementById('bfActual').textContent = fmtUSD(totActual);
+  document.getElementById('bfActual').textContent = fmtUSD(matchedActual);
   const bfvd = document.getElementById('bfVarDollars');
-  bfvd.textContent = fmtUSDsign(totVar); bfvd.className = 'num ' + varClass(totVarPct);
+  bfvd.textContent = fmtUSDsign(matchedVar); bfvd.className = 'num ' + varClass(matchedVarPct);
   const bfvp = document.getElementById('bfVarPct');
-  bfvp.textContent = fmtVarPct(totVarPct); bfvp.className = 'num ' + varClass(totVarPct);
+  bfvp.textContent = fmtVarPct(matchedVarPct); bfvp.className = 'num ' + varClass(matchedVarPct);
 
   // ---- Variance callout ----
-  const overages = merged.filter(m => m.variance != null && m.variance > 0 && m.hasBudget)
+  const overages = matchedRows.filter(m => m.variance != null && m.variance > 0)
     .sort((a,b) => b.variance - a.variance).slice(0, 3);
-  const unbudgeted = merged.filter(m => m.hasActual && !m.hasBudget && m.hours > 0);
   const co = document.getElementById('varianceCallout');
   co.style.display = 'block';
   const bits = [];
-  if (totVar != null && totVarPct != null) {
-    if (totVarPct > 10) {
-      bits.push(`<strong>${prop.name} is ${totVarPct.toFixed(1)}% over budget</strong> (${fmtUSDsign(totVar)} on ${fmtUSD(totBiwk)} bi-weekly budget).`);
-    } else if (totVarPct > 5) {
-      bits.push(`<strong>${prop.name} is ${totVarPct.toFixed(1)}% over budget</strong> (${fmtUSDsign(totVar)}).`);
-    } else if (totVarPct < -5) {
-      bits.push(`<strong>${prop.name} is ${Math.abs(totVarPct).toFixed(1)}% under budget</strong> (${fmtUSDsign(totVar)}).`);
+  if (matchedVar != null && matchedVarPct != null) {
+    if (matchedVarPct > 10) {
+      bits.push(`<strong>${prop.name} is ${matchedVarPct.toFixed(1)}% over budget</strong> on staffed depts (${fmtUSDsign(matchedVar)} on ${fmtUSD(matchedBiwk)} matched bi-weekly budget).`);
+    } else if (matchedVarPct > 5) {
+      bits.push(`<strong>${prop.name} is ${matchedVarPct.toFixed(1)}% over budget</strong> on staffed depts (${fmtUSDsign(matchedVar)}).`);
+    } else if (matchedVarPct < -5) {
+      bits.push(`<strong>${prop.name} is ${Math.abs(matchedVarPct).toFixed(1)}% under budget</strong> on staffed depts (${fmtUSDsign(matchedVar)}).`);
     } else {
-      bits.push(`<strong>${prop.name} is on track</strong> — variance ${fmtVarPct(totVarPct)} (${fmtUSDsign(totVar)}).`);
+      bits.push(`<strong>${prop.name} is on track</strong> — staffed-dept variance ${fmtVarPct(matchedVarPct)} (${fmtUSDsign(matchedVar)}).`);
     }
+  }
+  if (unstaffedBiwk > 0) {
+    const top = unstaffedRows.sort((a,b) => b.biweekly - a.biweekly).slice(0, 3);
+    const names = top.map(u => u.label.replace(/^\d{5} /, '') + ' ' + fmtUSD(u.biweekly)).join(' • ');
+    bits.push(`<strong>Unstaffed budget:</strong> ${fmtUSD(unstaffedBiwk)} allocated to ${unstaffedRows.length} dept(s) with no AOD hours — ${names}.`);
   }
   if (overages.length > 0) {
     const list = overages.map(o => `${o.label.replace(/^\d{5} /, '')} ${fmtUSDsign(o.variance)} (${fmtVarPct(o.variancePct)})`).join('; ');
-    bits.push(`Top overages: ${list}.`);
+    bits.push(`Top staffed overages: ${list}.`);
   }
-  if (unbudgeted.length > 0) {
-    const names = unbudgeted.slice(0,5).map(u => u.label).join(', ');
-    bits.push(`${unbudgeted.length} unbudgeted dept(s) with AOD activity: ${names}.`);
+  if (unbudgetedRows.length > 0) {
+    const names = unbudgetedRows.slice(0,5).map(u => u.label).join(', ');
+    bits.push(`${unbudgetedRows.length} unbudgeted dept(s) with AOD activity: ${names}.`);
   }
-  if (totVarPct != null && totVarPct > 10) co.className = 'callout';
-  else if (totVarPct != null && totVarPct > 5) co.className = 'callout warn';
-  else if (totVarPct != null && totVarPct < -5) co.className = 'callout ok';
+  if (matchedVarPct != null && matchedVarPct > 10) co.className = 'callout';
+  else if (matchedVarPct != null && matchedVarPct > 5) co.className = 'callout warn';
+  else if (matchedVarPct != null && matchedVarPct < -5) co.className = 'callout ok';
   else co.className = 'callout info';
   co.innerHTML = bits.join('<br>');
 }
