@@ -1,6 +1,8 @@
 // Aviva Labor — Monthly Payroll Budget per (Community, Department)
 // Source: Aviva Budget File Templates (v6-v9), Payroll sheet, April 2026 column
-// Bi-weekly proration factor: 14/30 = 0.4667 (Apr 5-18 within Apr 1-30)
+// Pay period: Sun Apr 5 - Sat Apr 18, 2026 (14 days, paid Fri Apr 24, 1-week arrears)
+// Bi-weekly proration factor: 14/30 = 0.4667
+// Scope: payroll wages + OT + ER taxes/admin only — excludes health/401k/PTO accruals
 // Goffstown, River Front, West Cobb excluded — divested per Jimmy
 
 window.AVIVA_BUDGETS = {
