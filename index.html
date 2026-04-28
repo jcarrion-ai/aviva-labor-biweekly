@@ -6,6 +6,7 @@
 <title>Aviva Labor Dashboard — Pay Period Apr 5–18, 2026</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="property/budgets.js"></script>
+<script src="property/wage_rates.js"></script>
 <style>
   :root {
     --bg: #F2F3F5;
@@ -88,6 +89,13 @@
   .ot-mid  { color: var(--warn-deep); font-weight: 600; }
   .ot-high { color: var(--danger);   font-weight: 600; }
 
+  /* Variance colors */
+  .var-under { color: var(--primary); font-weight: 600; }
+  .var-mild  { color: var(--warn-deep); font-weight: 600; }
+  .var-over  { color: var(--danger); font-weight: 700; }
+  .var-zero  { color: var(--text2); }
+  .row-over  { background: rgba(192,57,43,0.04); }
+
   .footer { padding: 22px 36px; color: var(--text2); font-size: 12px; }
 
   .pending { color: var(--text2); font-style: italic; }
@@ -130,7 +138,7 @@
       <a class="nav-item" href="property/awh.html">West Hartford</a>
       <a class="nav-item" href="property/wdl.html">Woodlands</a>
     </nav>
-    <div class="sidebar-foot">v1.3 • Lloyd Jones LLC</div>
+    <div class="sidebar-foot">v1.4 • Lloyd Jones LLC</div>
   </aside>
   <main class="main">
     <div class="topbar">
@@ -230,18 +238,20 @@
         </table>
       </div>
 
-      <!-- 6. PAYROLL BUDGET (BI-WEEKLY PRORATED) -->
+      <!-- 6. PAYROLL BUDGET vs ACTUAL with VARIANCE -->
       <div class="section-header" id="budget">Payroll Budget vs Actual</div>
+      <div id="varianceCallout" class="status-callout warn" style="margin-bottom:14px;display:none;"></div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th>Property</th>
               <th class="num">Bi-Wk $ Budget</th>
-              <th class="num">Monthly $ Budget</th>
-              <th class="num">Actual Hours</th>
-              <th class="num">Implied $/Hr</th>
-              <th class="num"># Depts</th>
+              <th class="num">Actual Hrs</th>
+              <th class="num">$/Hr</th>
+              <th class="num">Est. $ Actual</th>
+              <th class="num">Variance $</th>
+              <th class="num">Variance %</th>
             </tr>
           </thead>
           <tbody id="phase2Body"></tbody>
@@ -249,15 +259,16 @@
             <tr>
               <td>Portfolio</td>
               <td class="num" id="ftBudgetBiwk">—</td>
-              <td class="num" id="ftBudgetMonthly">—</td>
               <td class="num" id="ftBudgetHours">—</td>
               <td class="num" id="ftBudgetRate">—</td>
-              <td class="num" id="ftBudgetDepts">—</td>
+              <td class="num" id="ftBudgetActual">—</td>
+              <td class="num" id="ftBudgetVar">—</td>
+              <td class="num" id="ftBudgetVarPct">—</td>
             </tr>
           </tfoot>
         </table>
       </div>
-      <div class="phase2-note">Bi-weekly $ budget = April 2026 monthly payroll budget × 14/30 (Apr 5–18 is 14 days within April). Click any property name above to see the department-level budget breakdown. AOD reports actuals in hours, not dollars — the dashboard pairs $ budget with hours actuals; future enhancement: map AOD hours to $ via avg wage rate to compute true $ variance.</div>
+      <div class="phase2-note">Bi-weekly $ budget = April 2026 monthly payroll budget × 14/30 (Apr 5–18 is 14 days within April). $/Hr from each property's Detailed Payroll sheet. Est. $ Actual = AOD hours × $/hr. <strong>Variance &gt; 10% over budget flagged red, 5–10% amber, under budget green.</strong> Click any property name to see the department-level breakdown driving the variance.</div>
 
     </div>
     <div class="footer" id="footer">
@@ -375,39 +386,106 @@ function renderTable() {
 function renderPhase2() {
   const body = document.getElementById('phase2Body');
   const budgets = window.AVIVA_BUDGETS || {};
+  const rates = window.AVIVA_WAGE_RATES || {};
+  const fallback = window.AVIVA_FALLBACK_RATE || 25;
   const factor = window.AVIVA_BIWEEKLY_FACTOR || (14/30);
-  const fmtUSD = (n) => (n == null || n === 0) ? '—' : '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
-  let totMonthly = 0, totHours = 0, totDepts = 0;
-  // Sort by monthly budget desc
-  const sorted = PROPERTIES.slice().map(p => {
+  const fmtUSD = (n) => (n == null) ? '—' : (n === 0 ? '$0' : '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 }));
+  const fmtUSDsign = (n) => {
+    if (n == null) return '—';
+    const abs = '$' + Math.abs(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    return n < 0 ? `(${abs})` : (n > 0 ? '+' + abs : '$0');
+  };
+  const fmtVarPct = (pct) => {
+    if (pct == null) return '—';
+    return (pct > 0 ? '+' : '') + pct.toFixed(1) + '%';
+  };
+  const varClass = (pct) => {
+    if (pct == null) return 'var-zero';
+    if (pct > 10) return 'var-over';
+    if (pct > 5) return 'var-mild';
+    if (pct < 0) return 'var-under';
+    return 'var-zero';
+  };
+
+  // Compute per-property estimated $ actual using AOD hours × wage rate per dept
+  function estimateActual(code, totalAodHrs) {
+    const propRates = rates[code] || {};
+    // We need per-dept hours, but at portfolio level we only have totals. Use per-dept from AVIVA_DEPTS if available.
+    const depts = (window.AVIVA_DEPTS && window.AVIVA_DEPTS[code]) || [];
+    if (depts.length === 0) return totalAodHrs * fallback;
+    let total = 0;
+    depts.forEach(d => {
+      const m = (d.dept || '').match(/^(\d{5})/);
+      const gl5 = m ? m[1] : null;
+      const rate = (gl5 && propRates[gl5] != null) ? propRates[gl5] : fallback;
+      total += (d.reg + d.ovt) * rate;
+    });
+    return total;
+  }
+
+  const enriched = PROPERTIES.map(p => {
     const b = budgets[p.code] || [];
     const monthly = b.reduce((s,r) => s + (r.monthly||0), 0);
-    const hours = (p.active || 0) + (p.ot || 0);
-    return { p, monthly, hours, deptCount: b.length };
-  }).sort((a,b) => b.monthly - a.monthly);
-  body.innerHTML = sorted.map(({p, monthly, hours, deptCount}) => {
     const biwk = monthly * factor;
-    const rate = (biwk > 0 && hours > 0) ? (biwk / hours) : null;
-    totMonthly += monthly;
-    totHours += hours;
-    totDepts += deptCount;
+    const hours = (p.active || 0) + (p.ot || 0);
+    const estActual = estimateActual(p.code, hours);
+    const variance = estActual - biwk;
+    const variancePct = biwk > 0 ? (variance / biwk * 100) : null;
+    const rateAvg = hours > 0 ? estActual / hours : null;
+    return { p, monthly, biwk, hours, estActual, variance, variancePct, rateAvg };
+  });
+  // Sort by variance % desc (worst overages first)
+  enriched.sort((a,b) => {
+    const av = a.variancePct == null ? -Infinity : a.variancePct;
+    const bv = b.variancePct == null ? -Infinity : b.variancePct;
+    return bv - av;
+  });
+  body.innerHTML = enriched.map(({p, biwk, hours, estActual, variance, variancePct, rateAvg}) => {
     const drillUrl = `property/${p.code.toLowerCase()}.html`;
-    return `<tr>
+    const overRow = (variancePct != null && variancePct > 10) ? ' class="row-over"' : '';
+    return `<tr${overRow}>
       <td><a href="${drillUrl}" style="color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--text2);">${p.name}</a></td>
       <td class="num">${fmtUSD(biwk)}</td>
-      <td class="num">${fmtUSD(monthly)}</td>
       <td class="num">${fmtN(hours, 0)}</td>
-      <td class="num">${rate ? '$' + rate.toFixed(2) : '—'}</td>
-      <td class="num">${deptCount}</td>
+      <td class="num">${rateAvg ? '$' + rateAvg.toFixed(2) : '—'}</td>
+      <td class="num">${fmtUSD(estActual)}</td>
+      <td class="num"><span class="${varClass(variancePct)}">${fmtUSDsign(variance)}</span></td>
+      <td class="num"><span class="${varClass(variancePct)}">${fmtVarPct(variancePct)}</span></td>
     </tr>`;
   }).join('');
-  const totBiwk = totMonthly * factor;
-  const totRate = (totBiwk > 0 && totHours > 0) ? (totBiwk / totHours) : null;
+
+  const totBiwk = enriched.reduce((s,e) => s + e.biwk, 0);
+  const totHours = enriched.reduce((s,e) => s + e.hours, 0);
+  const totActual = enriched.reduce((s,e) => s + e.estActual, 0);
+  const totVar = totActual - totBiwk;
+  const totVarPct = totBiwk > 0 ? (totVar / totBiwk * 100) : null;
+  const totRate = totHours > 0 ? totActual / totHours : null;
   document.getElementById('ftBudgetBiwk').textContent = fmtUSD(totBiwk);
-  document.getElementById('ftBudgetMonthly').textContent = fmtUSD(totMonthly);
   document.getElementById('ftBudgetHours').textContent = fmtN(totHours, 0);
   document.getElementById('ftBudgetRate').textContent = totRate ? '$' + totRate.toFixed(2) : '—';
-  document.getElementById('ftBudgetDepts').textContent = totDepts;
+  document.getElementById('ftBudgetActual').textContent = fmtUSD(totActual);
+  const ftv = document.getElementById('ftBudgetVar');
+  ftv.textContent = fmtUSDsign(totVar); ftv.className = 'num ' + varClass(totVarPct);
+  const ftvp = document.getElementById('ftBudgetVarPct');
+  ftvp.textContent = fmtVarPct(totVarPct); ftvp.className = 'num ' + varClass(totVarPct);
+
+  // Top callout: properties >10% over
+  const overs = enriched.filter(e => e.variancePct != null && e.variancePct > 10);
+  const co = document.getElementById('varianceCallout');
+  if (overs.length > 0) {
+    co.style.display = 'block';
+    co.className = 'status-callout warn';
+    const list = overs.map(e => `<strong>${e.p.name}</strong> ${fmtVarPct(e.variancePct)} (${fmtUSDsign(e.variance)})`).join(' • ');
+    co.innerHTML = `<strong>${overs.length} of ${enriched.length} properties &gt; 10% over budget</strong> — ${list}`;
+  } else if (totVarPct != null && totVarPct > 5) {
+    co.style.display = 'block';
+    co.className = 'status-callout warn';
+    co.innerHTML = `<strong>Portfolio is ${totVarPct.toFixed(1)}% over budget</strong> (${fmtUSDsign(totVar)} on ${fmtUSD(totBiwk)} bi-weekly budget).`;
+  } else if (totVarPct != null && totVarPct < -5) {
+    co.style.display = 'block';
+    co.className = 'status-callout ok';
+    co.innerHTML = `<strong>Portfolio is ${Math.abs(totVarPct).toFixed(1)}% under budget</strong> (${fmtUSDsign(totVar)}).`;
+  }
 }
 
 function renderCharts() {
