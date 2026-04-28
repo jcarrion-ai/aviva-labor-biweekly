@@ -1,0 +1,42 @@
+{
+  "discovered": "2026-04-27",
+  "portal": "https://avivasl.attendanceondemand.com/mobile/mss3.aew/#{E7597EB0-DCAB-4D4C-892F-92110949DE80}",
+  "store_ids": {
+    "workgroup_store": "mssWGStore"
+  },
+  "report_paths": {
+    "department_hours": "Reporting > Department Hours",
+    "time_card_summary_previous": "Daily Operations > Time Card Summary (Previous)",
+    "dashboard": "Daily Operations > Dashboard"
+  },
+  "period_options": {
+    "previous_period": "Previous Period (in Period dropdown)"
+  },
+  "filter_buttons": {
+    "workgroup_filter": "Workgroups button (top right of Department Hours report)",
+    "workgroup_dashboard_filter": "My Workgroups dropdown (Dashboard top)"
+  },
+  "ui_signals_to_explore_for_submission_status": [
+    "Edits Required (red box on Dashboard daily cards)",
+    "Unapproved by Supervisor (left nav under Daily Operations)",
+    "Attendance Issues count",
+    "Approving / Lock / padlock icons (TBD - not yet observed)"
+  ],
+  "properties": [
+    {"wgnum":  3, "code": "ABP", "internal_name": "AVIVA BALDWIN PARK",     "display_name": "Baldwin Park"},
+    {"wgnum": 13, "code": "CCH", "internal_name": "COUNTRY CLUB HEIGHTS",   "display_name": "Country Club Heights"},
+    {"wgnum": 10, "code": "GLN", "internal_name": "AVIVA GLENDALE",         "display_name": "Glendale"},
+    {"wgnum":  5, "code": "AGB", "internal_name": "AVIVA GRANBURY",         "display_name": "Granbury"},
+    {"wgnum":  4, "code": "HIL", "internal_name": "AVIVA HILLS",            "display_name": "Hills"},
+    {"wgnum": 21, "code": "MAY", "internal_name": "AVIVA MAYBELLE CARTER",  "display_name": "Maybelle Carter"},
+    {"wgnum":  6, "code": "MER", "internal_name": "AVIVA MERRILLVILLE",     "display_name": "Merrillville"},
+    {"wgnum":  7, "code": "PSL", "internal_name": "AVIVA PORT ST LUCIE",    "display_name": "Port St. Lucie"},
+    {"wgnum":  9, "code": "RVB", "internal_name": "AVIVA RIVER BEND",       "display_name": "Riverbend"},
+    {"wgnum": 11, "code": "VAL", "internal_name": "AVIVA VALPARAISO",       "display_name": "Valparaiso"},
+    {"wgnum": 12, "code": "AWH", "internal_name": "AVIVA WEST HARTFORD",    "display_name": "West Hartford"},
+    {"wgnum": 25, "code": "WDL", "internal_name": "AVIVA WOODLANDS",        "display_name": "Woodlands"}
+  ],
+  "non_community_workgroups": [
+    {"wgnum": 14, "code": "ASL", "internal_name": "AVIVA SENIOR LIVING LLC", "note": "Corporate entity - exclude from community dashboard"}
+  ]
+}
