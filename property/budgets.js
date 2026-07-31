@@ -276,4 +276,4 @@ window.AVIVA_BUDGETS = {
   ],
 };
 
-window.AVIVA_BIWEEKLY_FACTOR = (3/30 + 11/31); // Jun 28–Jul 11 spans June (3d) + July (11d): weighted per spec. Single-month periods: revert to 14 / 30.
+window.AVIVA_BIWEEKLY_FACTOR = (14/30); // Jul 12–25 falls entirely in July: single-month factor 14/30 per spec.
