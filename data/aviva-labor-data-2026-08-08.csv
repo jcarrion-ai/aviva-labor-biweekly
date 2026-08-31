@@ -1,0 +1,13 @@
+period_start,period_end,pay_date,property_code,property_name,wgnum,submission_status,active_hours,ot_hours,ot_pct,employee_count,avg_hours_per_employee
+2026-07-26,2026-08-08,2026-08-14,ABP,Baldwin Park,3,submitted,5213.72,227.43,4.36,103,50.62
+2026-07-26,2026-08-08,2026-08-14,CCH,Country Club Heights,13,submitted,4172.83,189.48,4.54,105,39.74
+2026-07-26,2026-08-08,2026-08-14,GLN,Glendale,10,submitted,1928.18,108.80,5.64,44,43.82
+2026-07-26,2026-08-08,2026-08-14,AGB,Granbury,5,submitted,2655.88,73.90,2.78,41,64.78
+2026-07-26,2026-08-08,2026-08-14,HIL,Hills,4,submitted,3671.58,136.13,3.71,78,47.07
+2026-07-26,2026-08-08,2026-08-14,MAY,Maybelle Carter,21,submitted,3792.98,181.37,4.78,70,54.19
+2026-07-26,2026-08-08,2026-08-14,MER,Merrillville,6,submitted,2767.92,99.90,3.61,52,53.23
+2026-07-26,2026-08-08,2026-08-14,PSL,Port St. Lucie,7,submitted,3128.80,72.97,2.33,54,57.94
+2026-07-26,2026-08-08,2026-08-14,RVB,Riverbend,9,submitted,3820.47,308.35,8.07,81,47.17
+2026-07-26,2026-08-08,2026-08-14,VAL,Valparaiso,11,submitted,3877.28,79.65,2.05,83,46.71
+2026-07-26,2026-08-08,2026-08-14,AWH,West Hartford,12,submitted,4452.22,113.67,2.55,83,53.64
+2026-07-26,2026-08-08,2026-08-14,WDL,Woodlands,25,submitted,5783.43,117.18,2.03,114,50.73
