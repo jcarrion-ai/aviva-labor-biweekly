@@ -407,7 +407,7 @@ function render(code) {
   document.title = `Aviva Labor — ${prop.name} — ${period.start} – ${period.end}`;
   document.getElementById('propTitle').innerHTML = `${prop.name} <small>${code} • wgnum ${prop.wgnum}</small>`;
   document.getElementById('periodLabel').textContent = `Pay Period: ${period.start} – ${period.end} • Pays ${period.payDate}`;
-  document.getElementById('refreshStamp').textContent = 'Last refresh: 2026-08-31';
+  document.getElementById('refreshStamp').textContent = 'Last refresh: 2026-08-14';
 
   // ---- KPIs (hours) ----
   const totReg = depts.reduce((s,d) => s + d.reg, 0);
